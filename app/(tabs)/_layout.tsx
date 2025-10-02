@@ -12,6 +12,9 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
+  // Giả sử bạn có một trạng thái để kiểm tra cảnh báo
+  const hasAlert = true; // Thay đổi giá trị này để kiểm tra
+
   return (
     <Tabs
       screenOptions={{
@@ -21,7 +24,7 @@ export default function TabLayout() {
         name="HomePage/index"
         options={{
           title: 'Trang chủ',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -29,15 +32,29 @@ export default function TabLayout() {
         name="Monitoring/index"
         options={{
           title: 'Theo dõi',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
         }}
       />
+
+      <Tabs.Screen
+        name="Alert/index"
+        options={{
+          title: 'Theo dõi',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon
+              name="exclamation-triangle"  // hoặc "bell", "bullhorn"
+              color={hasAlert ? 'red' : 'green'}  // Đỏ khi cảnh báo, xanh khi OK
+            />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         // Trỏ dến file app/(tabs)/Setting/index.tsx
         name="LoiSong/index"
         options={{
           title: 'Lối sống',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="leaf" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -45,10 +62,10 @@ export default function TabLayout() {
         name="Setting/index"
         options={{
           title: 'Cài đặt',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
-      
+
     </Tabs>
   );
 }
