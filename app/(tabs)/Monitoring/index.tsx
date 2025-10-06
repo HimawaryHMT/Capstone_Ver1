@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
 
 export default function TabThreeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab Three</Text>
-      <EditScreenInfo path="app/(tabs)/Monitoring/three.tsx" />
+     
     </View>
   );
 }

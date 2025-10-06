@@ -26,7 +26,6 @@ export default function ForgotPasswordScreen() {
       u => u.email === emailOrPhone || u.phone === emailOrPhone
     );
     if (user) {
-        Alert.alert("Yêu cầu đặt lại mật khẩu đã được gửi!");
         router.push('../Auth/Forgot Password/Verify/Verify_Password');
     } else {
         Alert.alert("Email hoặc số điện thoại không tồn tại trong hệ thống.");

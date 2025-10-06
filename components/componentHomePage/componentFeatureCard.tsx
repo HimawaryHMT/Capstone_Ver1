@@ -28,14 +28,14 @@ export default function FeatureCard({
   return (
     <TouchableOpacity onPress={onPress} style={[styles.featureCard, styleCard]}>
       <View style={styles.cardContent}>
-      <Text style={styles.cardTitleBold}>{title}</Text>
-      <MCI name={iconName} size={76} color={iconColor} style={styles.tileIcon} />
+        <Text style={styles.cardTitleBold}>{title}</Text>
+        <MCI name={iconName} size={76} color={iconColor} style={styles.tileIcon} />
       </View>
 
       <View style={styles.cardValueRow}>
-    {value && <Text style={styles.cardValueLarge}>{value}</Text>}
-    {unit && <Text style={styles.cardUnit}>{unit}</Text>}
-  </View>
+        {value && <Text style={styles.cardValueLarge}>{value}</Text>}
+        {unit && <Text style={styles.cardUnit}>{unit}</Text>}
+      </View>
 
       {subtitle && <Text style={styles.cardSubtitle}>{subtitle}</Text>}
     </TouchableOpacity>

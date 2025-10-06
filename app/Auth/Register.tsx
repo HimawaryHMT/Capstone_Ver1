@@ -35,7 +35,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = () => {
-    console.log('Form data:', formData);
+    router.push('../Auth/VerifyRegister');
   };
 
   const handleLogin = () => {

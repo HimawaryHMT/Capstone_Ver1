@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
   ScrollView,
@@ -14,6 +14,8 @@ import FeatureCard from '../../../components/componentHomePage/componentFeatureC
 
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#da9191ff" />
@@ -45,7 +47,7 @@ export default function HomeScreen() {
             value="100/75"
             unit="mmHg"
             styleCard={styles.tileBlue}
-            onPress={() => router.push('/bloodpressure' as any)}
+            onPress={() => router.push('../../(modals)/HuyetAp')}
           />
 
           {/* Blood Sugar Card */}
@@ -56,6 +58,7 @@ export default function HomeScreen() {
             value="--"
             unit="mmol/L"
             styleCard={styles.tilePink}
+            onPress={() => router.push('../../(modals)/DuongHuyet')}
           />
 
 
@@ -67,6 +70,7 @@ export default function HomeScreen() {
             value="--"
             unit="KG"
             styleCard={styles.tileIndigo}
+            onPress={() => router.push('../../(modals)/CanNangVaBMI')}
           />
 
           {/* Water Reminder Card */}
@@ -77,8 +81,7 @@ export default function HomeScreen() {
             value="0"
             unit="/2000ml"
             styleCard={styles.tileCyan}
-          //  onPress={() => router.push('/water' as any)}
-          />
+            onPress={() => router.push('../../(modals)/NhacNhoUongNuoc')}         />
 
           {/* AI Doctor Card */}
           <FeatureCard
@@ -87,6 +90,7 @@ export default function HomeScreen() {
             iconColor="#10b981"
             subtitle="Tư vấn sức khỏe"
             styleCard={styles.tileTeal}
+            onPress={() => router.push('../../(modals)/BacSiAI')}
           />
 
 
