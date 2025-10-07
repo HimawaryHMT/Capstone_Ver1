@@ -17,13 +17,42 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
-    if (email === "thang@gmail.com" && password === "123") {
-      router.push("/(tabs)/HomePage"); // Đường dẫn Home (sửa thành route bạn đang dùng)
-    } else {
-      Alert.alert("Sai thông tin!", "Email hoặc mật khẩu không đúng");
+  const handleLogin = async () => {
+    // Gửi yêu cầu đăng nhập đến server
+    try {
+      const res = await fetch('http://192.168.100.5:5060/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Đăng nhập thành công, chuyển hướng đến trang chính
+        router.push("/(tabs)/HomePage");
+        console.log("Đăng nhập thành công");
+      } else {
+        // Đăng nhập thất bại, hiển thị thông báo lỗi
+        Alert.alert("Đăng nhập thất bại", data.message || "Vui lòng kiểm tra lại thông tin đăng nhập.");
+      }
+
+    } catch (error) {
+      Alert.alert("Lỗi mạng", "Không thể kết nối đến server. Vui lòng thử lại sau.");
+      console.error("Lỗi đăng nhập:", error);
     }
+
   };
+
+  /* =================================== */
+
+  // const handleLogin = () => {
+  //   if (email === "thang@gmail.com" && password === "123") {
+  //     router.push("/(tabs)/HomePage"); // Đường dẫn Home (sửa thành route bạn đang dùng)
+  //   } else {
+  //     Alert.alert("Sai thông tin!", "Email hoặc mật khẩu không đúng");
+  //   }
+  // };
 
   return (
     <View style={styles.container}>

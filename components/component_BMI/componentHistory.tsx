@@ -40,7 +40,7 @@ export default function AllHistory() {
             </Pressable>
 
             {/* ✅ Nút nhỏ nằm trong card lớn */}
-            <Pressable style={styles.historyButton} >
+            <Pressable style={styles.historyButton} onPress={() => router.push("../../(modals)/ScreenCanNangVaChiSoBMI/ScreenAllHistory/AllHistory")}>
               <Text style={styles.historyButtonText}>Tất cả lịch sử</Text>
             </Pressable>
           </View>
