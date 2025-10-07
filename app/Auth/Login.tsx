@@ -13,7 +13,7 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -25,7 +25,7 @@ export default function LoginScreen() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -38,7 +38,7 @@ export default function LoginScreen() {
       }
 
     } catch (error) {
-      Alert.alert("Lỗi mạng", "Không thể kết nối đến server. Vui lòng thử lại sau.");
+      Alert.alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
       console.error("Lỗi đăng nhập:", error);
     }
 
@@ -73,8 +73,8 @@ export default function LoginScreen() {
         style={styles.input}
         placeholder="Email/Số điện thoại"
         placeholderTextColor="#666"
-        value={email}
-        onChangeText={setEmail}
+        value={identifier}
+        onChangeText={setIdentifier}
       />
 
       {/* Ô nhập Mật khẩu + icon */}
