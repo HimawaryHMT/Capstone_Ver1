@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text, TouchableOpacity, View } from 'react-native';
 import styles from '../../assets/styles/style';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 
 
 export function ComponentDevice() {
@@ -15,6 +16,10 @@ export function ComponentDevice() {
     return () => clearInterval(timer); // cleanup khi component unmount
   }, []);
 
+
+  const router = useRouter();
+
+
   return (
     <View style={styles.deviceCard}>
       {/* Device Header */}
@@ -27,7 +32,10 @@ export function ComponentDevice() {
       </View>
 
       {/* Device Image / Status */}
-      <View style={styles.deviceImageContainer}>
+      <TouchableOpacity
+        style={styles.deviceImageContainer}
+        onPress={() => router.push('/(modals)/ScreenCamera/screenCamera1')}  // ← Trang bạn muốn đi tới
+      >
         {/* Offline Badge */}
         <View style={styles.offlineBadgeRow}>
           <View style={styles.offlineBadge}>
@@ -44,12 +52,13 @@ export function ComponentDevice() {
 
         {/* Help Button */}
         <View style={styles.deviceActions}>
-          <TouchableOpacity style={styles.helpButton}>
+          <View style={styles.helpButton}>
             <Ionicons name="help-circle" size={16} color="#333" />
             <Text style={styles.helpButtonText}>Xem trợ giúp</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
+
     </View>
   );
 }

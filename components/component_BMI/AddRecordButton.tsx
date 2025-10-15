@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text } from "react-native";
 export function AddRecordButton() {
   return (
     <Pressable
-      onPress={() => {router.push('../../../(modals)/ScreenAddRecord.tsx/AddRecord');}}
+      onPress={() => {router.push('../../../(modals)/ScreenCanNangVaChiSoBMI/ScreenAddRecord.tsx/AddRecord');}}
       style={({ pressed }) => [
         styles.btn,
         pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }, // hiệu ứng nhấn

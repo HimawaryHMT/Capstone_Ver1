@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { BASE_URL } from "@/config";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     // Gửi yêu cầu đăng nhập đến server
     try {
-      const res = await fetch('http://192.168.100.5:5060/api/auth/login', {
+      const res = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
