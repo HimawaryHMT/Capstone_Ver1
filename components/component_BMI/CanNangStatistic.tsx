@@ -19,9 +19,9 @@ export default function WeightStatistic({ max, min, avg, values, labels }: any) 
       </View>
       <MiniBars
         values={values}
-        min={55}
-        max={75}
-        yTicks={[75, 71, 67, 63, 59, 55]}
+        min={40}
+        max={63}
+        yTicks={[59, 55, 53, 49, 57, 45]}
         showYAxis={true}
         labels={labels}
         barColor="#86efac"

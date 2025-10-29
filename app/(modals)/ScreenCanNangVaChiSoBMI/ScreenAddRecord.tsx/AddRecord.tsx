@@ -44,25 +44,21 @@ export default function AddRecordPage() {
 
         {/* Time Picker Card */}
         <BottomAddRecord
-          previousDate="2024 tháng 9 27"
+          previousDate="2024-09-27"
           previousHour="21"
           previousMinute="53"
-          currentDate="2025 tháng 9 28"
+          currentDate="2025-09-28"
           currentHour="22"
           currentMinute="54"
-          nextDate=""
-          nextHour="23"
-          nextMinute="55"
         />
 
         {/* Bottom space */}
         <View style={{ height: 200 }} />
       </ScrollView>
-        {/* Nút Lưu */}
-        {/* Nút Lưu trữ */}
-<Pressable style={styles.saveBtn} >
-  <Text style={styles.saveBtnText}>Lưu trữ</Text>
-</Pressable>
+      {/* Nút Lưu trữ */}
+      <Pressable style={styles.saveBtn} >
+        <Text style={styles.saveBtnText}>Lưu trữ</Text>
+      </Pressable>
 
     </SafeAreaView>
   );
@@ -104,19 +100,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveBtn: {
-  backgroundColor: "#10b981",
-  paddingVertical: 12,
-  borderRadius: 30,
-  alignItems: "center",
-  marginTop: 16,
+    backgroundColor: "#10b981",
+    paddingVertical: 12,
+    borderRadius: 30,
+    alignItems: "center",
+    marginTop: 16,
     marginBottom: 20,
-    width : "90%",
+    width: "90%",
     alignSelf: "center",
-},
-saveBtnText: {
-  color: "#fff",
-  fontSize: 20,
-  fontWeight: "700",
-},
+  },
+  saveBtnText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+  },
 
 });
