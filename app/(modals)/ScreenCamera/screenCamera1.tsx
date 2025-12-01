@@ -15,7 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import VideoSurface from './VideoSurface';
 import { Stack } from "expo-router";
-
+import { VideoView, useVideoPlayer } from "expo-video";
+import { BASE_URL } from "@/config"; 
 
 const { height } = Dimensions.get('window');
 
@@ -24,7 +25,7 @@ const { height } = Dimensions.get('window');
  *    Ví dụ: 'https://your-domain.com/live/camera01/index.m3u8'
  * 2) Nếu để '' (rỗng) => xem như CHƯA KẾT NỐI, sẽ hiện ảnh minh hoạ.
  */
-const STREAM_URL = ''; // <-- Thay vào đây link HLS thật khi có
+const STREAM_URL = `${BASE_URL}/hls/cam1/index.m3u8`; // <-- Thay vào đây link HLS thật khi có
 
 // Link demo (để bạn test ngay)
 const DEMO_HLS = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
@@ -37,6 +38,9 @@ export default function CameraHome() {
   const connected = useMemo(() => !!streamUrl, [streamUrl]);
 
   const headerTitle = connected ? 'Camera Nhà (Live)' : 'Camera Nhà (Chưa kết nối)';
+
+  const now = new Date(); // ngày giờ hiện tại
+  const formatted = now.toLocaleString();
 
   const handleUseDemo = () => {
     setIsReady(false);
@@ -115,7 +119,7 @@ export default function CameraHome() {
                 />
                 {/* Overlays */}
                 <View style={styles.overlayTopLeft}>
-                  <Text style={styles.timestamp}>2025-10-13 16:45:04</Text>
+                  <Text style={styles.timestamp}>{formatted}</Text>
                 </View>
 
                 <View style={styles.overlayTopRight}>
@@ -227,7 +231,7 @@ export default function CameraHome() {
 
         {/* Video Thumbnails Section */}
         <View style={styles.thumbnailsSection}>
-          <Text style={styles.thumbnailsTitle}>2025-10-13 16:00</Text>
+          <Text style={styles.thumbnailsTitle}>{formatted}</Text>
           <View style={styles.thumbnailsGrid}>
             {['16:42', '16:39', '16:32', '16:29', '16:25', '16:20'].map((time, index) => (
               <TouchableOpacity key={index} style={styles.thumbnailItem} onPress={() => Alert.alert('Video', `Xem video lúc ${time}`)}>
@@ -304,6 +308,7 @@ export default function CameraHome() {
       </View>
 
       {/* Floating Action Button */}
+     
       <TouchableOpacity style={styles.fab} onPress={() => {/* Quick action */ }}>
         <Ionicons name="add" size={24} color="#fff" />
       </TouchableOpacity>

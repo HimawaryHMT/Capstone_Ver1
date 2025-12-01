@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React  from 'react';
 import { View } from 'react-native';
 
 
@@ -20,6 +20,7 @@ export default function TabLayout() {
   // Khi có cảnh báo thì chuyển sang màu đỏ
   const hasAlert = true; // Thay đổi giá trị này để kiểm tra
 
+  
   return (
     <Tabs
       screenOptions={{

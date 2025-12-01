@@ -1,4 +1,6 @@
+import { BASE_URL } from "@/config";
 import AntDesign from '@expo/vector-icons/AntDesign';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from "react";
 import {
@@ -9,7 +11,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { BASE_URL } from "@/config";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -18,41 +19,36 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    // Gửi yêu cầu đăng nhập đến server
     try {
       const res = await fetch(`${BASE_URL}/api/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ identifier, password }),
       });
+
       const data = await res.json();
+
       if (res.ok) {
-        // Đăng nhập thành công, chuyển hướng đến trang chính
+        const token = data.token;
+    
+        // ✅ Lưu token vào AsyncStorage
+        await AsyncStorage.setItem("accessToken", token);
+
+        console.log("✅ Token lưu thành công:", token);
+
+        // ✅ Chuyển hướng về HomePage
         router.push("/(tabs)/HomePage");
-        console.log("Đăng nhập thành công");
+
       } else {
-        // Đăng nhập thất bại, hiển thị thông báo lỗi
-        Alert.alert("Đăng nhập thất bại", data.message || "Vui lòng kiểm tra lại thông tin đăng nhập.");
+        Alert.alert("Đăng nhập thất bại", data.message);
       }
-
     } catch (error) {
-      Alert.alert("Không thể kết nối đến server. Vui lòng thử lại sau.");
       console.error("Lỗi đăng nhập:", error);
+      Alert.alert("Không thể kết nối đến server.");
     }
-
   };
-
-  /* =================================== */
-
-  // const handleLogin = () => {
-  //   if (email === "thang@gmail.com" && password === "123") {
-  //     router.push("/(tabs)/HomePage"); // Đường dẫn Home (sửa thành route bạn đang dùng)
-  //   } else {
-  //     Alert.alert("Sai thông tin!", "Email hoặc mật khẩu không đúng");
-  //   }
-  // };
 
   return (
     <View style={styles.container}>

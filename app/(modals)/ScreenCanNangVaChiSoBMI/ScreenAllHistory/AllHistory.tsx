@@ -100,8 +100,7 @@ export default function TatCaLichSu() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Tất cả lịch sử" }} />
-
+     
       {/* Summary */}
       <View style={styles.summaryWrap}>
         <View style={[styles.summaryCard, { flex: 1 }]}> 

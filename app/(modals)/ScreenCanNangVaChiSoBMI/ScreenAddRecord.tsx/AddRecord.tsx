@@ -6,11 +6,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import TopAddRecord from "./TopAddRecord";
 import BottomAddRecord from "./BottomAddRecord";
+import apiToken from "@/app/config/axiosConfig";
+import { Alert } from "react-native"; // thêm dòng này
+import { BASE_URL } from "@/config";
 
 export default function AddRecordPage() {
   const router = useRouter();
   const [weight, setWeight] = useState("60,0");
   const [height, setHeight] = useState("165,0");
+
+  const now = new Date();
+
+  const currentDate = now.toISOString().split("T")[0]; // YYYY-MM-DD
+  const currentHour = String(now.getHours()).padStart(2, "0");
+  const currentMinute = String(now.getMinutes()).padStart(2, "0");
 
   // Tính BMI
   const calculateBMI = () => {
@@ -20,6 +29,28 @@ export default function AddRecordPage() {
     return "0.0";
   };
   const bmi = parseFloat(calculateBMI());
+
+  // ✅ Gửi dữ liệu lên API khi người dùng bấm "Lưu trữ"
+  const handleSave = async () => {
+    try {
+      const w = parseFloat(weight.replace(",", "."));
+      const h = parseFloat(height.replace(",", ".")); // cm
+
+      const response = await apiToken.post(`${BASE_URL}/api/CanNangVaBMI/ThemBanGhi`, {
+        weight: w,
+        height: h,
+      });
+
+      Alert.alert("Thành công", "Đã lưu dữ liệu thành công!");
+      router.back(); // quay lại trang trước (hoặc điều hướng theo bạn muốn)
+
+    } catch (err: any) {
+      console.log("Save Error:", err.response?.data || err);
+
+      const msg = err.response?.data?.message || "Có lỗi xảy ra!";
+      Alert.alert("Lỗi", msg);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
@@ -42,21 +73,19 @@ export default function AddRecordPage() {
           </Pressable>
         </View>
 
+
         {/* Time Picker Card */}
         <BottomAddRecord
-          previousDate="2024-09-27"
-          previousHour="21"
-          previousMinute="53"
-          currentDate="2025-09-28"
-          currentHour="22"
-          currentMinute="54"
+          currentDate={currentDate}
+          currentHour={currentHour}
+          currentMinute={currentMinute}
         />
 
         {/* Bottom space */}
         <View style={{ height: 200 }} />
       </ScrollView>
       {/* Nút Lưu trữ */}
-      <Pressable style={styles.saveBtn} >
+      <Pressable style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Lưu trữ</Text>
       </Pressable>
 

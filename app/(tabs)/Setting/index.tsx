@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View, Button } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ======================= TÍCH HỢP HÀNH VI ĐĂNG XUẤT =======================
 export default function TabTwoScreen() {
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  const handleLogout = () => {
+  const handleLogout = async  () => {
+     await AsyncStorage.removeItem("accessToken"); // ✅ Xóa token khỏi bộ nhớ
+      console.log("Token đã được xóa!");
     router.replace('../Auth/Login');
   };
 

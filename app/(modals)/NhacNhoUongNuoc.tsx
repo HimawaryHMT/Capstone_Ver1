@@ -1,343 +1,422 @@
+// WaterReminderScreen.tsx
 import { Ionicons, MaterialCommunityIcons as MCI } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Modal, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Button_DieuChinhLuongNuoc1 from './ScreenNhacNhoUongNuoc/Button_DieuChinhLuongNuoc';
 
+const THEME = {
+  // Tươi & đậm hơn
+  bgTop: '#e6fbff',
+  bgBottom: '#d6f5ea',
+  card: '#ffffff',
+  textPrimary: '#0b1324',
+  textMuted: '#5b6b81',
+  // Accents đậm & rực hơn
+  accentDeep: '#0284c7',   // cyan-600
+  accentMint: '#10b981',   // emerald-500
+  accentTeal: '#0f766e',   // teal-700 (đậm để nổi trên nền sáng)
+  accentGlass: '#eafff7',
+  chipBg: '#f0fffb',
+  chipBorder: '#a7f3d0',
+  glassBorder: '#a5e4d6',
+  glassStrokeBg: '#d7f1ed',
+  // Tăng nổi khối
+  shadowTint: '#0b4d40',
+};
+
 export default function WaterReminderScreen() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [waterAmount, setWaterAmount] = useState(200); // Default 200ml
-  const [totalDrank, setTotalDrank] = useState(0); // giá trị bắt đầu
+  const [waterAmount, setWaterAmount] = useState(200);
+  const [totalDrank, setTotalDrank] = useState(0);
+  const [lastDrink, setLastDrink] = useState<number | null>(null);
+  const [goal, setGoal] = useState(2000);
+  const [cups, setCups] = useState(0);
 
+  const progress = useMemo(() => {
+    const p = Math.min(100, Math.max(0, Math.round((totalDrank / goal) * 100)));
+    return isFinite(p) ? p : 0;
+  }, [totalDrank, goal]);
 
+  const handleAdd = () => {
+    setTotalDrank(prev => {
+      const next = prev + waterAmount;
+      if (next > goal * 3) Alert.alert('Cảnh báo', 'Bạn đã vượt quá mức hợp lý trong ngày!');
+      return next;
+    });
+    setCups(c => c + 1);
+    setLastDrink(waterAmount);
+  };
+
+  const handleMinus = () => {
+    setTotalDrank(prev => Math.max(prev - waterAmount, 0));
+    setCups(c => Math.max(c - 1, 0));
+    setLastDrink(waterAmount * -1);
+  };
+
+  const handleResetToday = () => {
+    setTotalDrank(0);
+    setCups(0);
+    setLastDrink(null);
+  };
+
+  // Progress ring
+  const R = 70;
+  const STROKE = 12;
+  const CIRC = 2 * Math.PI * R;
+  const offset = CIRC - (CIRC * progress) / 100;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <Stack.Screen options={{ title: 'Nhắc nhở uống nước' }} />
 
-      {/* Total today */}
-      <View style={styles.totalBox}>
-        <Text style={styles.totalText}>0ml</Text>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <MCI name="cup" size={16} color="#111" />
-            <Text style={styles.infoLabel}> Mục tiêu hàng ngày:</Text>
-            <Text style={styles.infoValue}>2000ml</Text>
+      {/* HEADER */}
+      <View style={styles.headerTop}>
+        <View style={styles.titleRow}>
+          <Text style={styles.titleText}>💧 Uống nước nào!</Text>
+          <View style={styles.goalBadge}>
+            <Ionicons name="flag-outline" size={14} color={THEME.accentTeal} />
+            <Text style={styles.goalBadgeText}>{goal}ml</Text>
           </View>
-
-          <View style={styles.infoRow}>
-            <MCI name="cup-outline" size={16} color="#111" />
-            <Text style={styles.infoLabel}> Thức uống cuối cùng:</Text>
-            <Text style={styles.infoValueMuted}>{totalDrank}ml</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MCI name="cup" size={16} color="#111" />
-            <Text style={styles.infoLabel}> Số lần uống nước:</Text>
-            <Text style={styles.infoValue}>0 Tách</Text>
-          </View>
-
-          <TouchableOpacity style={styles.historyLink} onPress={() => router.push('/ScreenNhacNhoUongNuoc/LichSuVaThongKe')}>
-            <Text style={styles.historyText}>Lịch sử và Thống kê</Text>
-            <Ionicons name="chevron-forward" size={16} color="#111827" />
-          </TouchableOpacity>
         </View>
+        <Text style={styles.subTitle}>Giữ cơ thể tươi mát mỗi ngày</Text>
       </View>
 
-      <View style={{ flex: 1 }} />
+      {/* CARD PROGRESS */}
+      <View style={styles.headerWrap}>
+        <View style={styles.ringCard}>
+          <Svg width={200} height={200} viewBox="0 0 200 200" style={{ zIndex: 1 }}>
+            <Defs>
+              <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor={THEME.accentMint} />
+                <Stop offset="100%" stopColor={THEME.accentDeep} />
+              </LinearGradient>
+              <LinearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#ffffff" />
+                <Stop offset="1" stopColor="#f5fffb" />
+              </LinearGradient>
+            </Defs>
 
-      {/* Bottom Curved Background */}
-      <View style={styles.bottomWrapper}>
-        <Svg
-          height={200}
-          width="100%"
-          viewBox="0 0 1440 20"
-          style={styles.svgCurve}
-        >
-          <Path
-            fill="#5faf9f"
-            d="
-              M0,-300
-              L48,-310
-              C96,-320,192,-345,288,-310
-              C384,-280,480,-195,576,-185
-              C672,-175,768,-235,864,-255
-              C960,-275,1056,-255,1152,-265
-              C1248,-275,1344,-315,1392,-335
-              L1440,-350
-              V320
-              H0
-              Z
-            "
-          />
-        </Svg>
-
-        {/* Bottom Actions */}
-        <View style={styles.bottomArea}>
-          <View style={styles.progressTag}>
-            <Text style={styles.progressText}>0%</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.minusBtn}
-            onPress={() => {
-              setTotalDrank(prev => Math.max(prev - waterAmount, 0));
-            }}
-          >
-            <Ionicons name="remove" size={24} color="#0b4d40" />
-          </TouchableOpacity>
-
-          <View style={styles.centerGlass}>
-            <TouchableOpacity
-              onPress={() => setTotalDrank(prev => prev + waterAmount)}
-            >
-              <Ionicons name="add" size={32} color="#0b4d40" />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.bottleBtn}
-            onPress={() => setModalVisible(true)}
-          >
-            <FontAwesome6
-              name="bottle-water"
-              size={34}
-              color="blue"
-              style={{ transform: [{ rotate: '30deg' }] }}
+            {/* track */}
+            <Circle
+              cx="100"
+              cy="100"
+              r={R}
+              stroke={THEME.glassStrokeBg}
+              strokeWidth={STROKE}
+              fill="none"
             />
-          </TouchableOpacity>
-          <Text style={styles.bottleSize}>{waterAmount}ml</Text>
+            {/* progress */}
+            <Circle
+              cx="100"
+              cy="100"
+              r={R}
+              stroke="url(#grad)"
+              strokeWidth={STROKE}
+              fill="none"
+              strokeDasharray={`${CIRC} ${CIRC}`}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              transform="rotate(-90 100 100)"
+            />
+            {/* glow */}
+            <Circle
+              cx="100"
+              cy="100"
+              r={R}
+              stroke={THEME.accentMint + '22'}
+              strokeWidth={STROKE + 6}
+              fill="none"
+              opacity={0.4}
+            />
+          </Svg>
+
+          <View style={styles.centerStat}>
+            <Text style={styles.totalMl}>{totalDrank}ml</Text>
+            <View style={styles.pctRow}>
+              <Ionicons name="water-outline" size={16} color={THEME.accentTeal} />
+              <Text style={styles.progressPct}>{progress}%</Text>
+            </View>
+            <Text style={styles.subtleText}>Hôm nay</Text>
+          </View>
+
+          {/* card gradient backdrop (subtle) */}
+          <View style={styles.ringBackdrop} />
         </View>
+
+        {/* Chips */}
+        <View style={styles.infoRowGroup}>
+          <View style={styles.infoChip}>
+            <MCI name="cup" size={18} color={THEME.textPrimary} />
+            <Text style={styles.infoChipValue}>{goal}ml</Text>
+            <Text style={styles.infoChipLabel}>Mục tiêu</Text>
+          </View>
+
+          <View style={styles.infoChip}>
+            <MCI name="cup-outline" size={18} color={THEME.textPrimary} />
+            <Text style={styles.infoChipValue}>
+              {lastDrink === null ? '—' : `${Math.abs(lastDrink)}ml ${lastDrink > 0 ? '' : '(trừ)'}`}
+            </Text>
+            <Text style={styles.infoChipLabel}>Lần gần nhất</Text>
+          </View>
+
+          <View style={styles.infoChip}>
+            <MCI name="glass-cocktail" size={18} color={THEME.textPrimary} />
+            <Text style={styles.infoChipValue}>{cups} lần</Text>
+            <Text style={styles.infoChipLabel}>Số lần</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.historyBtn}
+          onPress={() => router.push('/ScreenNhacNhoUongNuoc/LichSuVaThongKe')}
+        >
+          <Text style={styles.historyBtnText}>Lịch sử & Thống kê</Text>
+          <Ionicons name="chevron-forward" size={16} color={THEME.textPrimary} />
+        </TouchableOpacity>
       </View>
 
-      {/* ✅ MODAL BOTTOM SHEET */}
+      {/* Wave */}
+      <Svg height={140} width="100%" viewBox="0 0 1440 320" style={styles.waveSvg} accessible accessibilityLabel="Nền sóng trang trí">
+        <Defs>
+          <LinearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#7cd9c8" />
+            <Stop offset="1" stopColor="#a8e6ff" />
+          </LinearGradient>
+        </Defs>
+        <Path
+          fill="url(#wave)"
+          d="M0,128L40,138.7C80,149,160,171,240,176C320,181,400,171,480,149.3C560,128,640,96,720,101.3C800,107,880,149,960,165.3C1040,181,1120,171,1200,154.7C1280,139,1360,117,1400,117.3L1440,117V320H0Z"
+        />
+      </Svg>
+
+      {/* Bottom actions */}
+      <View style={styles.bottomActions}>
+        <TouchableOpacity style={styles.roundBtn} onPress={handleMinus} accessibilityRole="button" accessibilityLabel="Trừ lượng nước">
+          <Ionicons name="remove" size={28} color="#0b4d40" />
+        </TouchableOpacity>
+
+        <View style={styles.centerGlass}>
+          <TouchableOpacity onPress={handleAdd} accessibilityRole="button" accessibilityLabel="Thêm lượng nước">
+            <Ionicons name="add" size={36} color="#0b4d40" />
+          </TouchableOpacity>
+          <Text style={styles.centerHint}>+{waterAmount}ml</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.roundBtn}
+          onPress={() => setModalVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Điều chỉnh dung tích mỗi lần uống"
+        >
+          <FontAwesome6 name="bottle-water" size={30} color="#0b4d40" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom row */}
+      <View style={styles.bottomRow}>
+        <TouchableOpacity
+          style={styles.secondaryBtn}
+          onPress={() => setGoal(g => (g === 2000 ? 2500 : 2000))}
+        >
+          <Ionicons name="flag-outline" size={16} color={THEME.accentTeal} />
+          <Text style={styles.secondaryBtnText}>Mục tiêu: {goal}ml</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.secondaryBtn} onPress={handleResetToday}>
+          <Ionicons name="refresh-outline" size={16} color={THEME.accentTeal} />
+          <Text style={styles.secondaryBtnText}>Làm mới</Text>
+        </TouchableOpacity>
+      </View>
+
       <Button_DieuChinhLuongNuoc1
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
         waterAmount={waterAmount}
         setWaterAmount={setWaterAmount}
       />
-
-
-
-    </View>
+    </SafeAreaView>
   );
 }
+
+const shadow = Platform.select({
+  ios: {
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  android: { elevation: 6 },
+  default: {},
+});
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#eaf4f1' },
-
-  totalBox: { alignItems: 'center', marginTop: 20 },
-  totalText: { fontSize: 56, fontWeight: '900', color: '#0f172a' },
-
-  infoCard: {
-    marginTop: 16,
-    width: '88%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  infoLabel: { fontSize: 16, color: '#0f172a' },
-  infoValue: { fontSize: 16, color: '#0f172a', marginLeft: 'auto', fontWeight: '700' },
-  infoValueMuted: { fontSize: 16, color: '#6b7280', marginLeft: 'auto' },
-
-  historyLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 8,
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  historyText: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginRight: 6 },
-
-  callToActionBox: {
-    backgroundColor: '#fbbf24',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 16,
-    padding: 16,
-  },
-  callToActionContent: { flexDirection: 'row', alignItems: 'center' },
-  callToActionIcon: { marginRight: 12, position: 'relative' },
-  bottleIcon: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#fbbf24',
-    borderRadius: 8,
-    padding: 2,
-  },
-  callToActionText: {
+  container: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0b4d40',
-    lineHeight: 20,
+    // Gradient-ish background bằng 2 màu (không cần lib):
+    backgroundColor: THEME.bgTop,
+     paddingBottom: 40,
   },
-
-  bottomWrapper: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
+  headerTop: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 4,
   },
-  svgCurve: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-
-  bottomArea: {
-    height: 240,
-    justifyContent: 'flex-end',
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-
-  progressTag: {
-    position: 'absolute',
-    left: 10,
-    top: 30,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
+  titleText: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: THEME.textPrimary,
+  },
+  subTitle: {
+    fontSize: 12,
+    color: THEME.textMuted,
+    marginTop: 4,
+  },
+  goalBadge: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 6,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
-  progressText: { fontWeight: '800', color: '#0b4d40' },
-
-  minusBtn: {
-    position: 'absolute',
-    left: 40,
-    bottom: 65,
-    width: 65,
-    height: 65,
-    borderRadius: 28,
-    backgroundColor: '#e6fff9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  centerGlass: {
-    width: 90,
-    height: 90,
-    backgroundColor: '#e6fff9',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#ccefe6',
-    marginBottom: 75,
-  },
-
-  bottleBtn: {
-    position: 'absolute',
-    right: 40,
-    bottom: 65,
-    width: 65,
-    height: 65,
-    borderRadius: 28,
-    backgroundColor: '#e6fff9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  bottleSize: {
-    position: 'absolute',
-    right: 50,
-    bottom: 40,
-    color: '#e6fff9',
-    fontWeight: '800',
-    fontSize: 15,
-  },
-
-  // ✅ Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  unitSwitch: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  unitText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginHorizontal: 10,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: THEME.chipBg,
+    borderWidth: 1,
+    borderColor: THEME.chipBorder,
+    borderRadius: 999,
+    ...shadow,
   },
-  unitMlActive: {
-    color: '#0b4d40',
-    borderBottomWidth: 2,
-    borderColor: '#0b4d40',
-  },
-  unitTextDisabled: {
-    color: '#aaa',
-  },
-  waterAmountText: {
-    fontSize: 32,
+  goalBadgeText: {
+    fontSize: 12,
     fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#0b4d40',
+    color: THEME.accentTeal,
   },
-  sliderContainer: {
-    width: '100%',
-    marginBottom: 20,
+
+  headerWrap: { paddingTop: 6, paddingHorizontal: 16 },
+
+  ringCard: {
+    alignSelf: 'center',
+    width: 270,
+    height: 270,
+    borderRadius: 28,
+    backgroundColor: THEME.card,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+    overflow: 'hidden',
+    ...shadow,
   },
-  sliderMarks: {
+  ringBackdrop: {
+    position: 'absolute',
+    inset: 0,
+    opacity: 0.65,
+    backgroundColor: '#ffffff00',
+  },
+  centerStat: { position: 'absolute', alignItems: 'center' },
+  totalMl: { fontSize: 30, fontWeight: '900', color: THEME.textPrimary },
+  pctRow: { marginTop: 6, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  progressPct: { fontSize: 18, fontWeight: '800', color: THEME.accentTeal },
+  subtleText: { fontSize: 12, color: THEME.textMuted, marginTop: 6 },
+
+  infoRowGroup: { marginTop: 12, flexDirection: 'row', gap: 10 },
+  infoChip: {
+    flex: 1,
+    backgroundColor: THEME.card,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: THEME.glassBorder,
+    ...shadow,
+  },
+  infoChipValue: { fontSize: 16, fontWeight: '800', color: THEME.textPrimary, marginTop: 6 },
+  infoChipLabel: { fontSize: 12, color: THEME.textMuted, marginTop: 2 },
+
+  historyBtn: {
+    marginTop: 14,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: THEME.card,
+    borderWidth: 1,
+    borderColor: THEME.glassBorder,
+    ...shadow,
+  },
+  historyBtnText: { fontSize: 14, fontWeight: '800', color: THEME.textPrimary },
+
+  waveSvg: { marginTop: 12, opacity: 0.95 },
+
+  bottomActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    marginTop: -10,
+    paddingHorizontal: 32,
+    alignItems: 'flex-end',
+    marginTop: -6,
   },
-  markContainer: {
+  roundBtn: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: THEME.accentGlass,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: THEME.glassBorder,
+    ...shadow,
   },
-  markLine: {
-    width: 2,
-    height: 10,
-    backgroundColor: '#0b4d40',
-    marginBottom: 2,
-  },
-  markText: {
-    fontSize: 12,
-    color: '#0f172a',
-  },
-  confirmBtn: {
-    backgroundColor: '#0b4d40',
-    paddingVertical: 14,
-    borderRadius: 10,
+  centerGlass: {
+    width: 128,
+    height: 128,
+    backgroundColor: THEME.accentGlass,
+    borderRadius: 36,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: THEME.glassBorder,
+    ...shadow,
   },
-  confirmText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+  centerHint: { marginTop: 6, fontSize: 12, fontWeight: '700', color: '#0b4d40' },
+
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingHorizontal: 20,
+    gap: 10,
+   
   },
+  secondaryBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: THEME.card,
+    borderRadius: 12,
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: THEME.glassBorder,
+    ...shadow,
+  },
+  secondaryBtnText: { fontSize: 13, fontWeight: '800', color: THEME.accentTeal },
 });
