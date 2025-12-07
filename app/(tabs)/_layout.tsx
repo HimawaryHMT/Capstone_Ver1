@@ -1,8 +1,9 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router';
-import React  from 'react';
+import React , { createContext, useState, useContext }  from 'react';
 import { View } from 'react-native';
+import { useAlert } from '@/components/component_Alert/AlertComponentContext';
 
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -18,8 +19,8 @@ export default function TabLayout() {
 
   // Ở trạng thái bình thường thì là màu xanh 
   // Khi có cảnh báo thì chuyển sang màu đỏ
-  const hasAlert = true; // Thay đổi giá trị này để kiểm tra
-
+  //const hasAlert = true; // Thay đổi giá trị này để kiểm tra
+   const { hasAlert } = useAlert();
   
   return (
     <Tabs
@@ -97,6 +98,7 @@ export default function TabLayout() {
               />
             </View>
           ),
+          headerShown: false
         }}
       />
 

@@ -5,7 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
+import { AlertProvider } from '@/components/component_Alert/AlertComponentContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -46,11 +46,17 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <ThemeProvider value ={DefaultTheme}>
-      <Stack>
+      {/* <Stack>
         <Stack.Screen name="Auth/Login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
-      </Stack>
+      </Stack> */}
+      {/* ⬇️ BỌC TOÀN BỘ APP BẰNG AlertProvider */}
+      <AlertProvider>
+        <Stack>
+          <Stack.Screen name="Auth/Login" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </AlertProvider>
     </ThemeProvider>
   );
 }

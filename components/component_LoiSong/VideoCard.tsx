@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, Image , View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface VideoCardProps {
     title: string;

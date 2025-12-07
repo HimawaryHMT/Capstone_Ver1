@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -8,268 +8,131 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { LatestAlertCard1 } from "@/components/component_Alert/Component_Video_Alert";
+import { AlertHistoryItem } from "@/components/component_Alert/Component_History_Alert";
+import type { AlertHistoryData } from "@/components/component_Alert/Component_History_Alert";
 
-// ==================== INTERFACES ====================
-interface LatestAlertCardProps {
-  onContactMedicalSupport?: () => void;
-}
+import { useAlert } from '@/components/component_Alert/AlertComponentContext';
+import { getFallEvents } from "@/services/fallEventApi";
 
-interface AlertHistoryData {
-  id: string;
-  type: "fall" | "abnormal";
-  title: string;
-  time: string;
-  status: string;
-}
-
-// ==================== COMPONENT: LatestAlertCard ====================
-const LatestAlertCard: React.FC<LatestAlertCardProps> = ({
-  onContactMedicalSupport,
-}) => {
-  return (
-    <View style={alertCardStyles.container}>
-      {/* Video preview */}
-      <View style={alertCardStyles.videoContainer}>
-        <Image
-          source={{
-            uri: "https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Fall+Alert+Preview",
-          }}
-          style={alertCardStyles.videoImage}
-          resizeMode="cover"
-        />
-        <View style={alertCardStyles.playButton}>
-          <Ionicons name="play" size={36} color="rgba(255,255,255,0.9)" />
-        </View>
-
-        <View style={alertCardStyles.incidentTag}>
-          <Ionicons name="warning" size={16} color="#fff" />
-          <Text style={alertCardStyles.incidentTagText}>Sự cố té ngã</Text>
-        </View>
-      </View>
-
-      {/* Info */}
-      <View style={alertCardStyles.info}>
-        <View style={alertCardStyles.infoRow}>
-          <Ionicons name="time" size={16} color="#666" />
-          <Text style={alertCardStyles.infoText}>
-            09:30 SA, 15 tháng 10, 2024
-          </Text>
-        </View>
-        <View style={alertCardStyles.infoRow}>
-          <Ionicons name="location" size={16} color="#666" />
-          <Text style={alertCardStyles.infoText}>
-            Phát hiện té ngã tại phòng khách
-          </Text>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={alertCardStyles.actionsRow}>
-        <TouchableOpacity
-          style={[alertCardStyles.actionBtn, { backgroundColor: "#3ad840ff" }]}
-          onPress={onContactMedicalSupport}
-        >
-          <Ionicons name="call" size={18} color="#fff" />
-          <Text style={alertCardStyles.actionText}>Liên hệ hỗ trợ y tế</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[alertCardStyles.actionBtn, { backgroundColor: "#ffe66d" }]}
-        >
-          <Ionicons name="help-buoy" size={18} color="#111" />
-          <Text style={[alertCardStyles.actionText, { color: "#111" }]}>
-            Hướng dẫn sơ cứu
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
-
-const alertCardStyles = StyleSheet.create({
-  container: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
-    overflow: "hidden",
-  },
-  videoContainer: {
-    position: "relative",
-    height: 220,
-    backgroundColor: "#f8f8f8",
-  },
-  videoImage: {
-    width: "100%",
-    height: "100%",
-  },
-  playButton: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -25 }, { translateY: -25 }],
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.8)",
-  },
-  incidentTag: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    backgroundColor: "#e63946",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 3,
-  },
-  incidentTagText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
-    marginLeft: 4,
-  },
-  info: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginVertical: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#444",
-  },
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginHorizontal: 5,
-  },
-  actionText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
-    marginLeft: 6,
-  },
-});
-
-// ==================== COMPONENT: AlertHistoryItem ====================
-const AlertHistoryItem = ({
-  type,
-  title,
-  time,
-  status,
-}: AlertHistoryData) => {
-  const color = type === "fall" ? "#e63946" : "#4361ee";
-
-  return (
-    <View style={[historyItemStyles.container, { borderLeftColor: color }]}>
-      <View style={[historyItemStyles.iconCircle, { backgroundColor: color }]}>
-        <Ionicons
-          name={type === "fall" ? "warning" : "pulse"}
-          size={20}
-          color="#fff"
-        />
-      </View>
-      <View style={historyItemStyles.content}>
-        <Text style={historyItemStyles.title}>{title}</Text>
-        <Text style={historyItemStyles.time}>{time}</Text>
-        <Text style={[historyItemStyles.status, { color }]}>
-          {status.toUpperCase()}
-        </Text>
-      </View>
-    </View>
-  );
-};
-
-const historyItemStyles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    borderLeftWidth: 4,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  content: { flex: 1 },
-  title: { fontSize: 16, fontWeight: "700", color: "#333" },
-  time: { fontSize: 13, color: "#666", marginVertical: 2 },
-  status: { fontSize: 12, fontWeight: "700" },
-});
 
 // ==================== MAIN SCREEN ====================
 export default function FallAlertScreen() {
+
+  type LatestAlert = {
+    time: string;
+    urlVideo: string;
+  };
+
   const handleContactMedicalSupport = () =>
     console.log("Contacting medical support...");
 
+  const [latestAlert, setLatestAlert] = useState<LatestAlert | null>(null);
+  const [alertHistory, setAlertHistory] = useState<AlertHistoryData[]>([]);
+
+  // Khi user vào màn hình Alert → tắt cảnh báo
+  const { setHasAlert } = useAlert();
+  useEffect(() => {
+    setHasAlert(false);
+  }, []);
+
+  // ===================== GỌI API LẤY DATA =====================
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getFallEvents(); // data chính là JSON bạn gửi Postman
+        console.log("👉 Raw API response:", data);
+        console.log("👉 Latest Alert:", latestAlert);
+        console.log("👉 Alert History:", alertHistory);
+
+        if (!data || !data.data || data.data.length === 0) {
+          console.log("Không có fall events");
+          return;
+        }
+
+        // Lấy sự kiện mới nhất (phần tử đầu)
+        const latest = data.data[0];
+
+        setLatestAlert({
+          time: latest.detected_at,
+          urlVideo: latest.video_url,
+        });
+
+        // Map lại dữ liệu cho lịch sử
+        const mappedHistory: AlertHistoryData[] = data.data.map((item: any) => ({
+          id: item.event_id,          
+          type: "fall",                
+          title: "Sự cố té ngã",      
+          time: item.detected_at,     
+          status: "Đã xử lý",         
+        }));
+
+        setAlertHistory(mappedHistory);
+      } catch (error) {
+        console.log("Lỗi load dữ liệu alert:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+
+  const alertHistory1: AlertHistoryData[] = [
+    {
+      id: "1",
+      type: "fall",
+      title: "Sự cố té ngã ",
+      time: "09:30 2 SA, 14 tháng 10, 2024",
+      status: "Đã xử lý",
+    },
+    {
+      id: "2",
+      type: "abnormal",
+      title: "Tình trạng bất thường",
+      time: "07:15 SA, 12 tháng 10, 2024",
+      status: "Đã xử lý",
+    },
+  ];
+
+  const latestAlert1 = [
+    {
+      time: "09:30 SA, 15 tháng 10, 2024",
+      urlVideo: "https://res.cloudinary.com/dfwljv9iw/video/upload/v1764778624/fall_events/videos/Ezviz1_ID2_20251203_231651.mp4"
+    }
+  ]
+
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']} >
-      
+    <View style={styles.container}>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Cảnh báo mới nhất</Text>
-        <LatestAlertCard onContactMedicalSupport={handleContactMedicalSupport} />
 
+        <Text style={styles.sectionTitleCenter}>
+          <Ionicons name="warning-outline" size={26} color="#d7110bff" /> Cảnh báo
+        </Text>
+        {latestAlert && (
+          <LatestAlertCard1
+            urlVideo={latestAlert.urlVideo}
+            time={latestAlert.time}
+            onContactMedicalSupport={handleContactMedicalSupport}
+          />
+        )}
         <Text style={styles.sectionTitle}>Lịch sử cảnh báo</Text>
-        <AlertHistoryItem
-          id="1"
-          type="fall"
-          title="Sự cố té ngã"
-          time="09:30 SA, 14 tháng 10, 2024"
-          status="Đã xử lý"
-        />
-        <AlertHistoryItem
-          id="2"
-          type="abnormal"
-          title="Tình trạng bất thường"
-          time="07:15 SA, 12 tháng 10, 2024"
-          status="Đã xử lý"
-        />
+        {alertHistory.map((item) => (
+          <AlertHistoryItem
+            key={item.id}
+            id={item.id}
+            type={item.type}
+            title={item.title}
+            time={item.time}
+            status={item.status}
+          />
+        ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
+
+
 
 // ==================== STYLES ====================
 const styles = StyleSheet.create({
@@ -284,5 +147,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
+  },
+  sectionTitleCenter: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#d7110bff",
+    textAlign: "center",
+    marginTop: 30,
+    marginBottom: 5,
   },
 });
