@@ -6,7 +6,7 @@ type Props = {
   modalVisible: boolean;
   setModalVisible: (value: boolean) => void;
   waterAmount: number;
-  setWaterAmount: (value: number) => void;
+  setWaterAmount: (value: number) => void | Promise<void>;
 };
 
 const Button_DieuChinhLuongNuoc = ({

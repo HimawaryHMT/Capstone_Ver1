@@ -1,9 +1,9 @@
 // WaterReminderScreen.tsx
 import { Ionicons, MaterialCommunityIcons as MCI } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-
+  ActivityIndicator,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,6 +16,11 @@ import { router } from 'expo-router';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Button_DieuChinhLuongNuoc1 from './ScreenNhacNhoUongNuoc/Button_DieuChinhLuongNuoc';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  addWaterIntake,
+  getTodayWaterIntake,
+} from '@/services/waterIntakeApi';
 
 const THEME = {
   // Tươi & đậm hơn
@@ -44,32 +49,195 @@ export default function WaterReminderScreen() {
   const [lastDrink, setLastDrink] = useState<number | null>(null);
   const [goal, setGoal] = useState(2000);
   const [cups, setCups] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [user_id, setUser_id] = useState<number | undefined>();
+  const [elderly_id, setElderly_id] = useState<number | undefined>();
+
+  // Load user data và settings
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  // Load dữ liệu khi user_id/elderly_id thay đổi
+  useEffect(() => {
+    if (user_id || elderly_id) {
+      loadData();
+    }
+  }, [user_id, elderly_id]);
+
+  const loadUserData = async () => {
+    try {
+      const userDataStr = await AsyncStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        setUser_id(userData.user_id);
+        setElderly_id(userData.elderly_id);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load settings từ AsyncStorage
+      try {
+        const settingsStr = await AsyncStorage.getItem('waterIntakeSettings');
+        if (settingsStr) {
+          const settings = JSON.parse(settingsStr);
+          setGoal(settings.daily_goal_ml || 2000);
+          setWaterAmount(settings.default_amount_ml || 200);
+        }
+      } catch (settingsError) {
+        console.warn('Error loading settings from AsyncStorage:', settingsError);
+        // Sử dụng giá trị mặc định nếu không load được settings
+      }
+
+      // Chỉ load today's intake nếu có user_id hoặc elderly_id
+      if (user_id || elderly_id) {
+        try {
+          const todayRes = await getTodayWaterIntake(user_id, elderly_id);
+          if (todayRes && todayRes.success) {
+            setTotalDrank(todayRes.data.total_ml || 0);
+            setCups(todayRes.data.drink_count || 0);
+            if (todayRes.data.last_drink_time) {
+              // Tìm lượng nước của lần uống gần nhất
+              // Tạm thời set là waterAmount, có thể cải thiện sau
+              setLastDrink(waterAmount);
+            }
+          } else {
+            // Nếu API trả về lỗi, set giá trị mặc định
+            console.warn('API returned error:', todayRes?.message);
+            setTotalDrank(0);
+            setCups(0);
+          }
+        } catch (apiError: any) {
+          console.error('Error calling getTodayWaterIntake API:', apiError);
+          // Nếu lỗi API, vẫn hiển thị màn hình với giá trị 0
+          setTotalDrank(0);
+          setCups(0);
+          // Chỉ hiển thị alert nếu lỗi nghiêm trọng
+          if (apiError.response?.status !== 400) {
+            Alert.alert('Lỗi', apiError.response?.data?.message || 'Không thể tải dữ liệu từ server. Vui lòng thử lại.');
+          }
+        }
+      } else {
+        // Nếu chưa có user_id/elderly_id, set giá trị mặc định
+        setTotalDrank(0);
+        setCups(0);
+      }
+    } catch (error: any) {
+      console.error('Error loading data:', error);
+      // Chỉ hiển thị alert cho lỗi không mong đợi
+      if (error.message && !error.message.includes('user_id')) {
+        Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const progress = useMemo(() => {
     const p = Math.min(100, Math.max(0, Math.round((totalDrank / goal) * 100)));
     return isFinite(p) ? p : 0;
   }, [totalDrank, goal]);
 
-  const handleAdd = () => {
-    setTotalDrank(prev => {
-      const next = prev + waterAmount;
-      if (next > goal * 3) Alert.alert('Cảnh báo', 'Bạn đã vượt quá mức hợp lý trong ngày!');
-      return next;
-    });
-    setCups(c => c + 1);
-    setLastDrink(waterAmount);
+  const handleAdd = async () => {
+    if (saving) return;
+
+    try {
+      setSaving(true);
+      const nextTotal = totalDrank + waterAmount;
+      
+      if (nextTotal > goal * 3) {
+        Alert.alert('Cảnh báo', 'Bạn đã vượt quá mức hợp lý trong ngày!');
+      }
+
+      // Gọi API để lưu
+      const res = await addWaterIntake(waterAmount, user_id, elderly_id);
+      
+      if (res.success) {
+        setTotalDrank(nextTotal);
+        setCups(c => c + 1);
+        setLastDrink(waterAmount);
+      } else {
+        Alert.alert('Lỗi', res.message || 'Không thể lưu dữ liệu');
+      }
+    } catch (error: any) {
+      console.error('Error adding water intake:', error);
+      Alert.alert('Lỗi', error.response?.data?.message || 'Không thể kết nối đến server');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleMinus = () => {
-    setTotalDrank(prev => Math.max(prev - waterAmount, 0));
-    setCups(c => Math.max(c - 1, 0));
-    setLastDrink(waterAmount * -1);
+  const handleMinus = async () => {
+    if (saving || totalDrank < waterAmount) return;
+
+    try {
+      setSaving(true);
+      // Lấy lịch sử để xóa bản ghi gần nhất
+      // Tạm thời chỉ cập nhật UI, có thể cải thiện sau để xóa đúng bản ghi
+      const newTotal = Math.max(totalDrank - waterAmount, 0);
+      setTotalDrank(newTotal);
+      setCups(c => Math.max(c - 1, 0));
+      setLastDrink(waterAmount * -1);
+      
+      // TODO: Implement delete last record properly
+      Alert.alert('Thông báo', 'Tính năng xóa bản ghi sẽ được cập nhật sớm');
+    } catch (error) {
+      console.error('Error subtracting water intake:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleResetToday = () => {
-    setTotalDrank(0);
-    setCups(0);
-    setLastDrink(null);
+    Alert.alert(
+      'Xác nhận',
+      'Bạn có chắc muốn reset dữ liệu hôm nay?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            setTotalDrank(0);
+            setCups(0);
+            setLastDrink(null);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleGoalChange = async (newGoal: number) => {
+    try {
+      // Lưu settings vào AsyncStorage
+      const settingsStr = await AsyncStorage.getItem('waterIntakeSettings');
+      const settings = settingsStr ? JSON.parse(settingsStr) : {};
+      settings.daily_goal_ml = newGoal;
+      await AsyncStorage.setItem('waterIntakeSettings', JSON.stringify(settings));
+      setGoal(newGoal);
+    } catch (error) {
+      console.error('Error updating goal:', error);
+    }
+  };
+
+  const handleWaterAmountChange = async (newAmount: number) => {
+    try {
+      // Lưu settings vào AsyncStorage
+      const settingsStr = await AsyncStorage.getItem('waterIntakeSettings');
+      const settings = settingsStr ? JSON.parse(settingsStr) : {};
+      settings.default_amount_ml = newAmount;
+      await AsyncStorage.setItem('waterIntakeSettings', JSON.stringify(settings));
+      setWaterAmount(newAmount);
+    } catch (error) {
+      console.error('Error updating water amount:', error);
+    }
   };
 
   // Progress ring
@@ -229,7 +397,7 @@ export default function WaterReminderScreen() {
       <View style={styles.bottomRow}>
         <TouchableOpacity
           style={styles.secondaryBtn}
-          onPress={() => setGoal(g => (g === 2000 ? 2500 : 2000))}
+          onPress={() => handleGoalChange(goal === 2000 ? 2500 : 2000)}
         >
           <Ionicons name="flag-outline" size={16} color={THEME.accentTeal} />
           <Text style={styles.secondaryBtnText}>Mục tiêu: {goal}ml</Text>
@@ -241,11 +409,17 @@ export default function WaterReminderScreen() {
         </TouchableOpacity>
       </View>
 
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={THEME.accentTeal} />
+        </View>
+      )}
+
       <Button_DieuChinhLuongNuoc1
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
         waterAmount={waterAmount}
-        setWaterAmount={setWaterAmount}
+        setWaterAmount={handleWaterAmountChange}
       />
     </SafeAreaView>
   );
@@ -419,4 +593,15 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   secondaryBtnText: { fontSize: 13, fontWeight: '800', color: THEME.accentTeal },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
 });

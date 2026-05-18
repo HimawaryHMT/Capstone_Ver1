@@ -1,36 +1,144 @@
 // LichSuVaThongKe.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
-import React, { useMemo } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getWaterIntakeStats } from "@/services/waterIntakeApi";
+
+interface DayData {
+  label: string;
+  value: number;
+}
 
 export default function LichSuVaThongKe() {
-  // ======= MOCK DATA (có thể thay bằng API) =======
-  const goalMl = 2000;
-  const days = useMemo(
-    () => [
-      { label: "9/25", value: 1200 },
-      { label: "9/26", value: 1950 },
-      { label: "9/27", value: 800 },
-      { label: "Hôm nay", value: 0 },
-    ],
-    []
-  );
+  const [goalMl, setGoalMl] = useState(2000);
+  const [days, setDays] = useState<DayData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user_id, setUser_id] = useState<number | undefined>();
+  const [elderly_id, setElderly_id] = useState<number | undefined>();
 
-  const total = useMemo(() => days.reduce((s, d) => s + d.value, 0), [days]);
-  const maxY = useMemo(
-    () => Math.max(goalMl * 1.4, ...days.map((d) => d.value), goalMl),
-    [days, goalMl]
-  );
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
+    if (user_id || elderly_id) {
+      loadStats();
+    }
+  }, [user_id, elderly_id]);
+
+  const loadUserData = async () => {
+    try {
+      const userDataStr = await AsyncStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        setUser_id(userData.user_id);
+        setElderly_id(userData.elderly_id);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Load settings từ AsyncStorage
+      try {
+        const settingsStr = await AsyncStorage.getItem('waterIntakeSettings');
+        if (settingsStr) {
+          const settings = JSON.parse(settingsStr);
+          setGoalMl(settings.daily_goal_ml || 2000);
+        }
+      } catch (settingsError) {
+        console.warn('Error loading settings from AsyncStorage:', settingsError);
+      }
+
+      // Chỉ load stats nếu có user_id hoặc elderly_id
+      if (user_id || elderly_id) {
+        try {
+          const statsRes = await getWaterIntakeStats(user_id, elderly_id, 7);
+          if (statsRes && statsRes.success && statsRes.data) {
+            const today = new Date();
+            const formattedDays: DayData[] = statsRes.data.map((stat, index) => {
+              const statDate = new Date(stat.date);
+              const isToday = statDate.toDateString() === today.toDateString();
+              
+              let label: string;
+              if (isToday) {
+                label = "Hôm nay";
+              } else {
+                label = `${statDate.getDate()}/${statDate.getMonth() + 1}`;
+              }
+
+              return {
+                label,
+                value: stat.total_ml || 0,
+              };
+            });
+
+            // Đảm bảo có ít nhất 4 ngày (thêm ngày trống nếu cần)
+            while (formattedDays.length < 4) {
+              const date = new Date();
+              date.setDate(date.getDate() - formattedDays.length);
+              formattedDays.unshift({
+                label: `${date.getDate()}/${date.getMonth() + 1}`,
+                value: 0,
+              });
+            }
+
+            setDays(formattedDays);
+          } else {
+            // Nếu không có dữ liệu, set mảng rỗng
+            setDays([]);
+          }
+        } catch (apiError: any) {
+          console.error('Error calling getWaterIntakeStats API:', apiError);
+          // Nếu lỗi API, set mảng rỗng
+          setDays([]);
+        }
+      } else {
+        // Nếu chưa có user_id/elderly_id, set mảng rỗng
+        setDays([]);
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      setDays([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tính toán thống kê
+  const total = useMemo(() => {
+    return days.reduce((sum, day) => sum + day.value, 0);
+  }, [days]);
+
+  const maxY = useMemo(() => {
+    if (days.length === 0) return goalMl * 1.4;
+    const maxValue = Math.max(...days.map((d) => d.value), goalMl);
+    return Math.max(goalMl * 1.4, maxValue);
+  }, [days, goalMl]);
 
   const yTicks = useMemo(() => {
-    // 5 tick: 0%, 25%, 50%, 75%, 100% của maxY (round gần 100)
     const step = Math.ceil(maxY / 4 / 100) * 100;
     return [step * 4, step * 3, step * 2, step, 0];
   }, [maxY]);
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Stack.Screen options={{ title: "Lịch sử & thống kê uống nước" }} />
+        <ActivityIndicator size="large" color="#2e7d6b" />
+        <Text style={{ marginTop: 12, color: '#64748b' }}>Đang tải dữ liệu...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: "Lịch sử & thống kê uống nước" }} />
 
       {/* ======= CARD CHI TIẾT / THỐNG KÊ NHANH ======= */}
@@ -182,7 +290,7 @@ export default function LichSuVaThongKe() {
         <Ionicons name="water" size={18} color="#fff" />
         <Text style={styles.drinkBtnText}>Uống nước</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 

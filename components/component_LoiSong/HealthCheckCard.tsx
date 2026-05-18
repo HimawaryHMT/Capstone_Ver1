@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface HealthCheckCardProps {
     title: string;
@@ -46,38 +47,42 @@ export default function HealthCheckCard({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        borderRadius: 20,
-        padding: 16,
-        minHeight: 220,
+        borderRadius: 24,
+        padding: 18,
+        minHeight: 240,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 4,
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     content: {
         flex: 1,
         justifyContent: 'space-between',
     },
     iconContainer: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        width: 76,
+        height: 76,
+        borderRadius: 38,
+        backgroundColor: 'rgba(255,255,255,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 18,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 1,
+            height: 3,
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.6)',
     },
     icon: {
         fontSize: 36,

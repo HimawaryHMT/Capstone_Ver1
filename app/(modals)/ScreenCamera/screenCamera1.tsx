@@ -30,6 +30,7 @@ export default function CameraHome() {
   const [streamUrl, setStreamUrl] = useState<string>(STREAM_URL);
   const [isReady, setIsReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   // animated scale cho fullscreen
   const fullscreenScale = useRef(new Animated.Value(0.9)).current;
@@ -41,18 +42,69 @@ export default function CameraHome() {
 
   const handleUseDemo = () => {
     setIsReady(false);
+    setHasError(false);
     setStreamUrl(DEMO_HLS);
     Alert.alert('Đã dùng link demo', 'Bạn đang xem stream demo HLS.');
   };
 
   const handleReconnect = () => {
     setIsReady(false);
-    setStreamUrl((prev) => prev); // chỗ này sau có thể refresh token / URL
+    // Force re-render bằng cách thêm timestamp vào URL
+    const separator = streamUrl.includes('?') ? '&' : '?';
+    setStreamUrl(`${streamUrl}${separator}_t=${Date.now()}`);
+    setTimeout(() => {
+      // Reset về URL gốc sau khi đã trigger reload
+      const baseUrl = streamUrl.split('?')[0].split('&')[0];
+      setStreamUrl(baseUrl);
+    }, 100);
   };
 
   const handleError = (e: unknown) => {
-    console.log('Video error: ', e);
-    Alert.alert('Lỗi phát video', 'Không phát được stream. Kiểm tra lại link HLS.');
+    console.error('Video error: ', e);
+    setIsReady(false);
+    setHasError(true);
+    
+    // Kiểm tra loại lỗi
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    console.log('Error message:', errorMessage);
+    console.log('Stream URL:', streamUrl);
+    
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('ECONNREFUSED')) {
+      Alert.alert(
+        'Lỗi kết nối',
+        `Không thể kết nối đến camera.\n\nURL: ${streamUrl}\n\nVui lòng kiểm tra:\n• Backend đã chạy chưa?\n• Địa chỉ IP có đúng không?\n• Firewall có chặn không?`,
+        [
+          { text: 'Thử lại', onPress: () => { setHasError(false); handleReconnect(); } },
+          { text: 'Dùng Demo', onPress: () => { setHasError(false); handleUseDemo(); } },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
+    } else if (errorMessage.includes('format') || errorMessage.includes('codec') || errorMessage.includes('not supported')) {
+      Alert.alert(
+        'Lỗi định dạng',
+        'Video stream không được hỗ trợ. Vui lòng kiểm tra định dạng HLS.',
+        [
+          { text: 'Dùng Demo', onPress: () => { setHasError(false); handleUseDemo(); } },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Lỗi phát video',
+        `Không phát được stream.\n\nLỗi: ${errorMessage}\n\nURL: ${streamUrl}\n\nVui lòng thử:\n• Kiểm tra lại link HLS\n• Dùng video demo để test`,
+        [
+          { text: 'Dùng Demo', onPress: () => { setHasError(false); handleUseDemo(); } },
+          { text: 'Thử lại', onPress: () => { setHasError(false); handleReconnect(); } },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
+  const handleVideoReady = () => {
+    setIsReady(true);
+    setHasError(false);
+    console.log('✅ Video ready:', streamUrl);
   };
 
   const openFullscreen = () => {
@@ -121,8 +173,9 @@ export default function CameraHome() {
             {connected ? (
               <>
                 <VideoSurface
+                  key={streamUrl} // Force re-render khi URL thay đổi
                   uri={streamUrl}
-                  onReady={() => setIsReady(true)}
+                  onReady={handleVideoReady}
                   onError={handleError}
                   style={styles.video}
                   autoPlay
@@ -130,11 +183,24 @@ export default function CameraHome() {
                   useNativeControls={false}
                 />
 
-                {/* Loading overlay (mẫu 1) */}
-                {!isReady && (
+                {/* Loading overlay */}
+                {!isReady && !hasError && (
                   <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={styles.loadingText}>Đang kết nối tới camera…</Text>
+                    <Text style={styles.loadingSubtext}>{streamUrl}</Text>
+                  </View>
+                )}
+
+                {/* Error overlay */}
+                {hasError && (
+                  <View style={styles.errorOverlay}>
+                    <Ionicons name="alert-circle" size={48} color="#ff4444" />
+                    <Text style={styles.errorText}>Không thể phát video</Text>
+                    <Text style={styles.errorSubtext}>Nhấn "Demo" để thử video mẫu</Text>
+                    <TouchableOpacity style={styles.errorButton} onPress={handleUseDemo}>
+                      <Text style={styles.errorButtonText}>Dùng Video Demo</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
 
@@ -227,21 +293,6 @@ export default function CameraHome() {
           </TouchableOpacity>
         </View>
 
-        {/* HISTORY THUMBNAILS */}
-        <View style={styles.thumbnailsSection}>
-          <Text style={styles.thumbnailsTitle}>Lịch sử gần đây · {formatted}</Text>
-
-          <View style={styles.thumbnailsGrid}>
-            {['16:42', '16:39', '16:32', '16:29', '16:25', '16:20'].map((time, index) => (
-              <TouchableOpacity key={index} style={styles.thumbnailItem}>
-                <View style={styles.thumbnail}>
-                  <Ionicons name="play" size={16} color="#fff" style={styles.thumbnailPlayIcon} />
-                  <Text style={styles.thumbnailTime}>{time}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
       </ScrollView>
 
       {/* FOOTER NAVIGATION */}
@@ -303,23 +354,24 @@ export default function CameraHome() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { flex: 1 },
-  scrollContent: { padding: 12, paddingBottom: 24 },
+  scrollContent: { padding: 16, paddingBottom: 100 }, // Thêm padding bottom để không bị che bởi bottom nav
 
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 10,
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-    marginBottom: 18,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    marginBottom: 20,
+    marginHorizontal: 4,
   },
 
   videoWrap: {
-    height: height * 0.38,
-    borderRadius: 16,
+    height: height * 0.45, // Tăng kích thước video để cân đối hơn
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#101317',
   },
@@ -338,6 +390,45 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+  },
+  loadingSubtext: {
+    marginTop: 6,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorText: {
+    marginTop: 16,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorSubtext: {
+    marginTop: 8,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  errorButton: {
+    marginTop: 20,
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  errorButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   // LIVE badge + time
@@ -449,10 +540,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
 
-  statItem: { fontSize: 12, color: '#333' },
+  statItem: { fontSize: 13, color: '#666', fontWeight: '500' },
 
   statsRight: {
     flexDirection: 'row',
@@ -471,53 +565,71 @@ const styles = StyleSheet.create({
   controlButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 6,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
     backgroundColor: '#fff',
-    marginBottom: 14,
+    marginBottom: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
 
   controlBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
     marginHorizontal: 4,
     backgroundColor: '#f8f9fa',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#e8e8e8',
   },
 
   controlBtnText: {
-    fontSize: 10,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 6,
     fontWeight: '600',
+    color: '#333',
   },
 
   // Bottom action
   bottomActionButtons: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: '#fff',
-    marginBottom: 16,
+    marginBottom: 20,
     alignItems: 'center',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
 
   actionBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#4A90E2',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    shadowColor: '#4A90E2',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
 
   actionBtnSecondary: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
@@ -525,75 +637,34 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
 
-  // Thumbnails
-  thumbnailsSection: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 14,
-  },
-
-  thumbnailsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 12,
-  },
-
-  thumbnailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-
-  thumbnailItem: {
-    width: '30%',
-    marginBottom: 12,
-  },
-
-  thumbnail: {
-    aspectRatio: 16 / 9,
-    backgroundColor: '#000',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-
-  thumbnailPlayIcon: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-  },
-
-  thumbnailTime: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
 
   // Bottom nav
   bottomNav: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingBottom: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#e8e8e8',
     justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 5,
   },
 
   navButton: {
     alignItems: 'center',
-    minWidth: 60,
+    minWidth: 70,
+    paddingVertical: 4,
   },
 
   navButtonText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
+    fontWeight: '500',
   },
 
   // Fullscreen modal

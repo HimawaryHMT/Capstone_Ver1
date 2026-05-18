@@ -29,10 +29,11 @@ const SPECIALISTS = [
 ];
 
 const COMMON_QUESTIONS = [
-  'My blood pressure is a bit high, do I have high blood pressure?',
-  'I feel a bit nauseous...',
-  'What could be the cause of my headache?',
-  'Did I catch a cold again? What are the ways to prevent catching a cold?',
+  'Tôi bị đau đầu, phải làm sao?',
+  'Tôi bị sốt, nên làm gì?',
+  'Tôi bị ho, có cách nào chữa không?',
+  'Tôi bị đau bụng, nguyên nhân là gì?',
+  'Tôi bị cảm lạnh, làm sao để nhanh khỏi?',
 ];
 
 export default function AIDoctorScreen() {

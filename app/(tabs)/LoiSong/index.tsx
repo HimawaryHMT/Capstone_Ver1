@@ -7,8 +7,9 @@ import TipCard from '@/components/component_LoiSong/TipCard';
 import VideoCard from '@/components/component_LoiSong/VideoCard';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, View, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TABS = [
     { id: 'all', label: 'TẤT CẢ' },
@@ -20,12 +21,48 @@ const TABS = [
 ];
 
 const SLEEP_VIDEOS = [
-    { id: '1', title: 'Nhịp sinh học', backgroundColor: '#4a5568' },
-    { id: '2', title: 'Khoảnh khắc hoàn hảo', backgroundColor: '#6b7280' },
-    { id: '3', title: 'Âm thanh thư giãn', backgroundColor: '#8b5a6f' },
-    { id: '4', title: 'Thiền định', backgroundColor: '#7c3aed' },
-    { id: '5', title: 'Hơi thở sâu', backgroundColor: '#059669' },
-    { id: '6', title: 'Thư giãn cơ bắp', backgroundColor: '#dc2626' },
+    { 
+        id: '1', 
+        title: 'Nhịp sinh học', 
+        backgroundColor: '#4a5568',
+        gradient: ['#667eea', '#764ba2'],
+        emoji: '🌙'
+    },
+    { 
+        id: '2', 
+        title: 'Khoảnh khắc hoàn hảo', 
+        backgroundColor: '#6b7280',
+        gradient: ['#f093fb', '#f5576c'],
+        emoji: '✨'
+    },
+    { 
+        id: '3', 
+        title: 'Âm thanh thư giãn', 
+        backgroundColor: '#8b5a6f',
+        gradient: ['#4facfe', '#00f2fe'],
+        emoji: '🎵'
+    },
+    { 
+        id: '4', 
+        title: 'Thiền định', 
+        backgroundColor: '#7c3aed',
+        gradient: ['#43e97b', '#38f9d7'],
+        emoji: '🧘'
+    },
+    { 
+        id: '5', 
+        title: 'Hơi thở sâu', 
+        backgroundColor: '#059669',
+        gradient: ['#fa709a', '#fee140'],
+        emoji: '💨'
+    },
+    { 
+        id: '6', 
+        title: 'Thư giãn cơ bắp', 
+        backgroundColor: '#dc2626',
+        gradient: ['#30cfd0', '#330867'],
+        emoji: '🌊'
+    },
 ];
 
 const HEALTH_CHECKS = [
@@ -154,10 +191,25 @@ export default function LifestyleScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea} edges={[ 'bottom', 'left', 'right']}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle="light-content" />
             <View style={styles.container}>
-                {/* Header */}
-                
+                {/* Header với gradient đẹp */}
+                <LinearGradient
+                    colors={['#667eea', '#764ba2', '#f093fb']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.headerGradient}
+                >
+                    <View style={styles.headerContent}>
+                        <View style={styles.headerIconContainer}>
+                            <Text style={styles.headerIcon}>🌿</Text>
+                        </View>
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.headerTitle}>Lối sống</Text>
+                            <Text style={styles.headerSubtitle}>Sống khỏe, sống vui mỗi ngày</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
 
                 {/* Tab Bar */}
                 <TabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -180,6 +232,8 @@ export default function LifestyleScreen() {
                                         <VideoCard
                                             title={video.title}
                                             backgroundColor={video.backgroundColor}
+                                            gradient={video.gradient}
+                                            emoji={video.emoji}
                                             onPress={() => { }}
                                         />
                                     </View>
@@ -282,6 +336,8 @@ export default function LifestyleScreen() {
                                             <VideoCard
                                                 title={video.title}
                                                 backgroundColor={video.backgroundColor}
+                                                gradient={video.gradient}
+                                                emoji={video.emoji}
                                                 onPress={() => { }}
                                             />
                                         </View>
@@ -389,11 +445,58 @@ export default function LifestyleScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f1f5f9', // nền tổng thể sáng nhẹ
+    backgroundColor: '#f8fafc', // nền tổng thể sáng nhẹ
   },
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  headerIcon: {
+    fontSize: 32,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
 
   // Header (chưa dùng, giữ nguyên)
@@ -423,19 +526,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // Section blocks (mỗi phần có nền xám nhẹ, bo góc và đổ bóng)
+  // Section blocks (mỗi phần có nền gradient nhẹ, bo góc và đổ bóng)
   section: {
     marginHorizontal: 16,
-    marginBottom: 22,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    backgroundColor: '#f8fafc', // xám nhạt nhẹ
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2, // hiệu ứng đổ bóng Android
+    marginBottom: 24,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    shadowColor: '#667eea',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.1)',
   },
 
   horizontalScrollContent: {
@@ -462,9 +567,11 @@ const styles = StyleSheet.create({
   },
   tabDescription: {
     fontSize: 15,
-    color: '#475569',
-    marginBottom: 18,
-    lineHeight: 22,
+    color: '#64748b',
+    marginBottom: 20,
+    lineHeight: 24,
+    fontWeight: '500',
+    paddingHorizontal: 4,
   },
 
   // Grid 2 cột

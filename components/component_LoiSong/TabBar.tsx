@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Tab {
     id: string;
@@ -25,13 +26,27 @@ export default function TabBar({ tabs, activeTab, onTabChange }: TabBarProps) {
                     return (
                         <TouchableOpacity
                             key={tab.id}
-                            style={[styles.tab, isActive && styles.activeTab]}
                             onPress={() => onTabChange(tab.id)}
                             activeOpacity={0.7}
                         >
-                            <Text style={[styles.tabText, isActive && styles.activeTabText]}>
-                                {tab.label}
-                            </Text>
+                            {isActive ? (
+                                <LinearGradient
+                                    colors={['#667eea', '#764ba2']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={[styles.tab, styles.activeTab]}
+                                >
+                                    <Text style={[styles.tabText, styles.activeTabText]}>
+                                        {tab.label}
+                                    </Text>
+                                </LinearGradient>
+                            ) : (
+                                <View style={styles.tab}>
+                                    <Text style={styles.tabText}>
+                                        {tab.label}
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                     );
                 })}
@@ -44,7 +59,12 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: '#e2e8f0',
+        shadowColor: '#667eea',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
     scrollContent: {
         paddingHorizontal: 16,
@@ -52,23 +72,34 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     tab: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 18,
-        backgroundColor: '#f3f4f6',
-        marginRight: 6,
-        minWidth: 80,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#f1f5f9',
+        marginRight: 8,
+        minWidth: 85,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
     },
     activeTab: {
-        backgroundColor: '#3F8F75',
+        borderWidth: 0,
+        shadowColor: '#667eea',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
     },
     tabText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#6b7280',
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#64748b',
         textAlign: 'center',
     },
     activeTabText: {
         color: '#fff',
+        fontWeight: '800',
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
 });

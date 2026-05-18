@@ -32,11 +32,23 @@ export default function LoginScreen() {
 
       if (res.ok) {
         const token = data.token;
+        const user = data.user;
     
         // ✅ Lưu token vào AsyncStorage
         await AsyncStorage.setItem("accessToken", token);
 
+        // ✅ Lưu user data vào AsyncStorage để dùng cho Doctor AI
+        if (user) {
+          await AsyncStorage.setItem("userData", JSON.stringify({
+            user_id: user.user_id,
+            elderly_id: user.elderly_id || null,
+            name: user.name,
+            email: user.email
+          }));
+        }
+
         console.log("✅ Token lưu thành công:", token);
+        console.log("✅ User data lưu thành công:", user);
 
         // ✅ Chuyển hướng về HomePage
         router.push("/(tabs)/HomePage");

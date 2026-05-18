@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Stack } from "expo-router";
 import {
+    ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -15,6 +17,8 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { chatWithDoctorAI } from '@/services/doctorAIApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Message {
     id: string;
@@ -32,49 +36,108 @@ export default function ChatScreen() {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: 'Hello, my name is Dr. Emma. How can I assist you today? Could you please tell me about any health concerns or symptoms you\'re currently experiencing? I support over 140 languages.',
+            text: 'Xin chào! Tôi là Bác sĩ AI. Tôi có thể giúp bạn tư vấn về các vấn đề sức khỏe thường gặp. Hãy mô tả triệu chứng hoặc câu hỏi của bạn nhé!',
             isUser: false,
-            senderName: 'Emma',
-            timestamp: '2025-10-06 20:42:40'
+            senderName: 'Bác sĩ AI',
+            timestamp: new Date().toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(',', '')
         }
     ]);
     const [inputText, setInputText] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        if (params.initialQuestion && typeof params.initialQuestion === 'string') {
-            setInputText(params.initialQuestion);
+        if (params.question && typeof params.question === 'string') {
+            setInputText(params.question);
         }
-    }, [params.initialQuestion]);
+    }, [params.question]);
 
-    const handleSend = () => {
-        if (inputText.trim()) {
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                text: inputText,
-                isUser: true,
-            };
+    const handleSend = async () => {
+        if (!inputText.trim() || isLoading) return;
 
-            setMessages(prev => [...prev, newMessage]);
-            setInputText('');
+        const questionText = inputText.trim();
+        
+        // Thêm câu hỏi của user vào chat
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            text: questionText,
+            isUser: true,
+        };
+        setMessages(prev => [...prev, userMessage]);
+        setInputText('');
+        setIsLoading(true);
 
-            // Simulate AI response
-            setTimeout(() => {
+        try {
+            // Lấy user_id từ AsyncStorage (nếu có)
+            // Có thể decode từ token hoặc lưu riêng khi login
+            const userData = await AsyncStorage.getItem('userData');
+            let user_id: number | undefined;
+            let elderly_id: number | undefined;
+            
+            if (userData) {
+                try {
+                    const parsed = JSON.parse(userData);
+                    user_id = parsed.user_id;
+                    elderly_id = parsed.elderly_id;
+                } catch (e) {
+                    console.log('Không thể parse userData');
+                }
+            }
+
+            // Gọi API Doctor AI
+            const response = await chatWithDoctorAI(questionText, user_id, elderly_id);
+
+            if (response.success && response.data) {
                 const aiResponse: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: 'Thank you for sharing that with me. Based on what you\'ve described, I\'d like to ask a few more questions to better understand your situation. When did you first notice these symptoms?',
+                    text: response.data.answer,
                     isUser: false,
-                    senderName: 'Emma',
-                    timestamp: new Date().toLocaleString('sv-SE', {
+                    senderName: 'Bác sĩ AI',
+                    timestamp: new Date().toLocaleString('vi-VN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
                         second: '2-digit'
-                    }).replace(' ', ' ')
+                    }).replace(',', '')
                 };
                 setMessages(prev => [...prev, aiResponse]);
-            }, 1000);
+            } else {
+                throw new Error('Không nhận được phản hồi từ server');
+            }
+        } catch (error: any) {
+            console.error('Lỗi khi gọi API Doctor AI:', error);
+            
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.',
+                isUser: false,
+                senderName: 'Bác sĩ AI',
+                timestamp: new Date().toLocaleString('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).replace(',', '')
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            
+            Alert.alert(
+                'Lỗi',
+                error.response?.data?.message || 'Không thể kết nối đến server. Vui lòng thử lại.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -117,20 +180,25 @@ export default function ChatScreen() {
 
                         <TextInput
                             style={styles.textInput}
-                            placeholder="My blood pressure is a bit high, do I have high blood pressure?"
+                            placeholder="Ví dụ: Tôi bị đau đầu, phải làm sao?"
                             placeholderTextColor="#999"
                             value={inputText}
                             onChangeText={setInputText}
                             multiline
                             maxLength={500}
+                            editable={!isLoading}
                         />
 
                         <TouchableOpacity
-                            style={styles.sendButton}
+                            style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
                             onPress={handleSend}
-                            disabled={!inputText.trim()}
+                            disabled={!inputText.trim() || isLoading}
                         >
-                            <Text style={styles.sendIcon}>➤</Text>
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.sendIcon}>➤</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
 
@@ -288,6 +356,10 @@ const styles = StyleSheet.create({
     sendIcon: {
         fontSize: 18,
         color: '#fff',
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#ccc',
+        opacity: 0.6,
     },
     toolbarContainer: {
         flexDirection: 'row',
